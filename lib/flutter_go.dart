@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 
 class Go {
   static const BasicMessageChannel _channel =
-      const BasicMessageChannel('go_rpc', const BinaryCodec());
+      const BasicMessageChannel('flutter_go', const BinaryCodec());
   static const JSONMessageCodec _jsonCodec = const JSONMessageCodec();
 
   static Future sendRequest(String method, [parameters]) {
