@@ -4,7 +4,6 @@ import (
 	"net/rpc"
 )
 
-
 type Builtin struct{}
 
 func (*Builtin) GetPlatformVersion(_ *struct{}, reply *string) error {

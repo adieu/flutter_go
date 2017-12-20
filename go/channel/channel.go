@@ -1,53 +1,41 @@
 package channel
 
 import (
-	"github.com/adieu/flutter_go/go/channel/types"
 	"github.com/adieu/flutter_go/go/channel/registry"
+	"github.com/adieu/flutter_go/go/channel/types"
 )
 
-func RegisterSender(name string, sender types.Sender) error {
-	return registry.DefaultRegistry.RegisterSender(name, sender)
-}
-
-func RegisterReceiver(name string, receiver types.Receiver) error {
-	return registry.DefaultRegistry.RegisterReceiver(name, receiver)
-}
-
 func SendMessage(name string, message []byte, replier types.Replier) error {
-	c, err := registry.DefaultRegistry.GetChannel(name)
+	p, err := registry.DefaultRegistry.GetChannel(name)
 	if err != nil {
 		return err
 	}
-	err = c.SendMessage(message, replier)
+	err = p.Go.SendMessage(message, replier)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
+func Connect(name string) (types.Channel, error) {
+	p, err := registry.DefaultRegistry.GetChannel(name)
+	if err != nil {
+		return nil, err
+	}
+	return p.Go
+}
+
 func Init(manager types.Manager) error {
-	channels := registry.DefaultRegistry.GetAllChannels()
-	for name := range channels {
-		c := channels[name]
-		if c.Sender == nil {
-			sender, err := manager.NewSender(name)
+	registry.NativeManager = manager
+	pairs := registry.DefaultRegistry.GetAllChannels()
+	for name := range pairs {
+		c := pairs[name]
+		if c.Native == nil {
+			channel, err := manager.NewChannel(name)
 			if err != nil {
 				return err
 			}
-			err = c.RegisterSender(sender)
-			if err != nil {
-				return err
-			}
-		}
-		if c.Receiver == nil {
-			receiver, err := manager.NewReceiver(name)
-			if err != nil {
-				return err
-			}
-			err = c.RegisterReceiver(receiver)
-			if err != nil {
-				return err
-			}
+			c.Native = channel
 		}
 	}
 	return nil

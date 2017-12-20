@@ -5,8 +5,7 @@ import android.util.Log;
 import io.flutter.plugin.common.BinaryMessenger;
 
 import types.Manager;
-import types.Receiver;
-import types.Sender;
+import types.Channel;
 
 
 public class GoManager implements Manager {
@@ -17,12 +16,7 @@ public class GoManager implements Manager {
     }
 
     @Override
-    public Receiver newReceiver(String p0) throws Exception {
-        return new GoReceiver(p0, this.messenger);
-    }
-
-    @Override
-    public Sender newSender(String p0) throws Exception {
-        return new GoSender(p0, this.messenger);
+    public Channel newChannel(String p0) throws Exception {
+        return new GoChannel(p0, this.messenger);
     }
 }

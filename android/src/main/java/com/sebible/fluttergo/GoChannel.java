@@ -7,20 +7,19 @@ import io.flutter.plugin.common.BasicMessageChannel;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.BinaryCodec;
 
-import types.Sender;
-import types.Replier;
 import types.Channel;
+import channel.Channel;
 
 
-public class GoSender implements Sender, BasicMessageChannel.MessageHandler<ByteBuffer> {
-    private static final String TAG = "GoSender";
+public class GoChannel implements Channel, BasicMessageChannel.MessageHandler<ByteBuffer> {
+    private static final String TAG = "GoChannel";
 
     private String name;
-    private Channel channel;
+    private BasicMessageChannel channel;
 
-    public GoSender(String name, BinaryMessenger messenger) {
+    public GoChannel(String name, BinaryMessenger messenger) {
         name = name;
-        BasicMessageChannel channel = new BasicMessageChannel<ByteBuffer>(messenger, name, BinaryCodec.INSTANCE);
+        channel = new BasicMessageChannel<ByteBuffer>(messenger, name, BinaryCodec.INSTANCE);
         channel.setMessageHandler(this);
     }
 
@@ -30,17 +29,13 @@ public class GoSender implements Sender, BasicMessageChannel.MessageHandler<Byte
     }
 
     @Override
-    public void setChannel(Channel p0) throws Exception {
-        this.channel = p0;
-    }
-
-    @Override
     public void onMessage(final ByteBuffer message, BasicMessageChannel.Reply<ByteBuffer> reply) {
 	try {
-	    this.sendMessage(message.array(), new GoReplier(reply));
+        Channel channel = channel.Channel.connect(name);
+	    channel.sendMessage(message.array(), new GoReplier(reply));
 	}
 	catch (Exception e) {
-            Log.e(TAG, "Send message exception: ", e);
+            Log.e(TAG, "Channel message exception: ", e);
 	}
 	return;
     }

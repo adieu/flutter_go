@@ -2,57 +2,24 @@ package registry
 
 import (
 	"errors"
-	"sync"
 	"github.com/adieu/flutter_go/go/channel/types"
+	"sync"
 )
 
-type Channel struct {
-	Name string
-	Sender types.Sender
-	Receiver types.Receiver
+var NativeManager types.Manager = nil
+
+type Pair struct {
+	Name   string
+	Go     types.Channel
+	Native types.Channel
 }
 
-func NewChannel(name string) *Channel {
-	return &Channel{
-		Name: name,
+func NewPair(name string, goChannel, nativeChannel types.Channel) *Pair {
+	return &Pair{
+		Name:   name,
+		Go:     goChannel,
+		Native: nativeChannel,
 	}
-}
-
-func NewSenderChannel(name string, sender types.Sender) *Channel {
-	c := &Channel{
-		Name: name,
-		Sender: sender,
-	}
-	sender.SetChannel(c)
-	return c
-}
-
-func NewReceiverChannel(name string, receiver types.Receiver) *Channel {
-	c := &Channel{
-		Name: name,
-		Receiver: receiver,
-	}
-	receiver.SetChannel(c)
-	return c
-}
-
-func (c *Channel) RegisterSender(sender types.Sender) error {
-	c.Sender = sender
-	sender.SetChannel(c)
-	return nil
-}
-
-func (c *Channel) RegisterReceiver(receiver types.Receiver) error {
-	c.Receiver = receiver
-	receiver.SetChannel(c)
-	return nil
-}
-
-func (c *Channel) SendMessage(message []byte, replier types.Replier) error {
-	if c.Receiver == nil {
-		return nil
-	}
-	return c.Receiver.OnMessage(message, replier)
 }
 
 type Registry struct {
@@ -65,45 +32,47 @@ func NewRegistry() *Registry {
 
 var DefaultRegistry = NewRegistry()
 
-func (r *Registry) RegisterSender(name string, sender types.Sender) error {
+func (r *Registry) RegisterChannel(name string, channel types.Channel) error {
 	if c, ok := r.channelMap.Load(name); ok {
-		if c.(*Channel).Sender == nil {
-			return c.(*Channel).RegisterSender(sender)
-		} else {
-			return errors.New("")
-		}
+		return errors.New("Already registered channel")
 	} else {
-		r.channelMap.Store(name, NewSenderChannel(name, sender))
+		if NativeManager == nil {
+			r.channelMap.Store(name, NewPair(name, channel, nil))
+		} else {
+			r.channelMap.Store(name, NewPair(name, channel, NativeManager.NewChannel(name)))
+		}
 	}
 	return nil
 }
 
-func (r *Registry) RegisterReceiver(name string, receiver types.Receiver) error {
+func (r *Registry) GetChannel(name string) (*Pair, error) {
 	if c, ok := r.channelMap.Load(name); ok {
-		if c.(*Channel).Receiver == nil {
-			return c.(*Channel).RegisterReceiver(receiver)
-		} else {
-			return errors.New("")
-		}
-	} else {
-		r.channelMap.Store(name, NewReceiverChannel(name, receiver))
-	}
-	return nil
-}
-
-func (r *Registry) GetChannel(name string) (*Channel, error) {
-	if c, ok := r.channelMap.Load(name); ok {
-		return c.(*Channel), nil
+		return c.(*Pair), nil
 	} else {
 		return nil, errors.New("channel does not exist")
 	}
 }
 
-func (r *Registry) GetAllChannels() map[string]*Channel {
-	m := make(map[string]*Channel)
-	r.channelMap.Range(func (key, value interface{}) bool{
-		m[key.(string)] = value.(*Channel)
+func (r *Registry) GetAllChannels() map[string]*Pair {
+	m := make(map[string]*Pair)
+	r.channelMap.Range(func(key, value interface{}) bool {
+		m[key.(string)] = value.(*Pair)
 		return true
-        })
+	})
 	return m
+}
+
+func Connect(name string) (types.Channel, error) {
+	p, err := registry.DefaultRegistry.GetChannel(name)
+	if err != nil {
+		return nil, err
+	}
+	if p.Native == nil {
+		return nil, errors.New("Native channel is not initialized")
+	}
+	return p.Native, nil
+}
+
+func Listen(name string, channel types.Channel) {
+	err := DefaultRegistry.RegisterChannel(name, channel)
 }

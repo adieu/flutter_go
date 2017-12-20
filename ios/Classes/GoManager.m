@@ -1,6 +1,5 @@
 #import "GoManager.h"
-#import "GoSender.h"
-#import "GoReceiver.h"
+#import "GoChannel.h"
 
 @implementation GoManager {
   NSObject<FlutterBinaryMessenger>* _messenger;
@@ -19,13 +18,9 @@
 //- (void)dealloc {
 //  [super dealloc];
 //}
-
-- (id<GoTypesReceiver>)newReceiver:(NSString*)p0 error:(NSError**)error {
-  return [GoReceiver receiverWithName:p0 binaryMessenger:_messenger];
-}
-
-- (id<GoTypesSender>)newSender:(NSString*)p0 error:(NSError**)error {
-  return [GoSender senderWithName:p0 binaryMessenger:_messenger];
+//
+- (id<GoTypesChannel>)newChannel:(NSString*)p0 error:(NSError**)error {
+  return [GoChannel channelWithName:p0 binaryMessenger:_messenger];
 }
 
 @end

@@ -1,20 +1,27 @@
-#import "GoSender.h"
+#import "GoChannel.h"
 #import "GoReplier.h"
 
-@implementation GoSender {
-  id<GoTypesChannel> _channel;
+@implementation GoChannel {
+  NSString* _name;
+  FlutterBasicMessageChannel* _channel;
 }
-+ (instancetype)senderWithName:(NSString*)name
++ (instancetype)channelWithName:(NSString*)name
                binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger {
   FlutterBasicMessageChannel* channel = [FlutterBasicMessageChannel
       messageChannelWithName:name
              binaryMessenger:messenger
                        codec:[FlutterBinaryCodec sharedInstance]];
-  GoSender* instance = [[GoSender alloc] init];
-  [channel setMessageHandler:^(id message, FlutterReply callback) {
-    [instance handleOnMessage:message callback:callback];
-  }];
+  GoChannel* instance = [[GoChannel alloc] initWithName:name chanel:channel];
   return instance;
+}
+- initWithName:(NSString*)name channel:(FlutterBasicMessageChannel*)channel {
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
+  _name = name;
+  _channel = channel;
+  [_channel setMessageHandler:^(id message, FlutterReply callback) {
+    [self handleOnMessage:message callback:callback];
+  }];
 }
 
 - (BOOL)sendMessage:(NSData*)p0 p1:(id<GoTypesReplier>)p1 error:(NSError**)error {
@@ -22,14 +29,10 @@
   return YES;
 }
 
-- (BOOL)setChannel:(id<GoTypesChannel>)p0 error:(NSError**)error {
-  _channel = p0;
-  return YES;
-}
-
 - (void)handleOnMessage:(id)message callback:(FlutterReply)callback {
   NSError *error;
-  [self sendMessage:message
+  channel = GoChannelConnect(_name, &error);
+  [channel sendMessage:message
                  p1:[GoReplier replierWithCallback:callback]
               error:&error];
 }

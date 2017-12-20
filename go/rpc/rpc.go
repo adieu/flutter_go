@@ -9,48 +9,56 @@ import (
 	"github.com/adieu/flutter_go/go/channel/types"
 )
 
-type stream struct {
+type codec struct {
 	input  *bytes.Reader
 	output *bytes.Buffer
 }
 
-func (s *stream) Write(p []byte) (n int, err error) {
+func (s *codec) Write(p []byte) (n int, err error) {
 	return s.output.Write(p)
 }
 
-func (s *stream) Read(p []byte) (n int, err error) {
+func (s *codec) Read(p []byte) (n int, err error) {
 	return s.input.Read(p)
 }
 
-func (s *stream) Close() error {
+func (s *codec) Close() error {
 	return nil
 }
 
-func newStream(in []byte) *stream {
-	return &stream{
+func newCodec(in []byte) *codec {
+	return &codec{
 		input:  bytes.NewReader(in),
 		output: bytes.NewBuffer(nil),
 	}
 }
 
-type RPCReceiver struct {
+type RPCChannel struct {
+	name   string
+	server *rpc.Server
 }
 
-func (r *RPCReceiver) OnMessage(message []byte, replier types.Replier) error {
+func NewRPCChannel(name string, server *rpc.Server) *RPCChannel {
+	if server == nil {
+		server = rpc.DefaultServer
+	}
+	return &RPCChannel{
+		name:   name,
+		server: server,
+	}
+}
+
+func (r *RPCChannel) SendMessage(message []byte, replier types.Replier) error {
 	m := make([]byte, len(message))
 	copy(m, message)
-	go Call(m, replier)
-	return nil
-}
-
-func (r *RPCReceiver) SetChannel(channel types.Channel) error {
+	go Call(r.server, m, replier)
 	return nil
 }
 
 // Call a RPC function
-func Call(message []byte, replier types.Replier) {
-	s := newStream(message)
-	err := rpc.ServeRequest(jsonrpc.NewServerCodec(s))
+func Call(server *rpc.Server, message []byte, replier types.Replier) {
+	c := newCodec(message)
+	err := server.ServeRequest(jsonrpc.NewServerCodec(c))
 	if err != nil {
 		replier.Reply([]byte(`{"error": "rpc error"}`))
 		return
@@ -60,8 +68,4 @@ func Call(message []byte, replier types.Replier) {
 	copy(r, resp)
 	replier.Reply(r)
 	return
-}
-
-func init() {
-	registry.DefaultRegistry.RegisterReceiver("go_rpc", &RPCReceiver{})
 }
