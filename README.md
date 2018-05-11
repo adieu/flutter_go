@@ -59,7 +59,7 @@ cd libs
 gomobile bind --target=android github.com/adieu/flutter_go/go/plugin github.com/adieu/flutter_go/go/channel github.com/adieu/flutter_go/go/channel/types
 ```
 
-Build and test if it works. If everyhing goes well, you could call go functions in your flutter app.
+Build and test if it works. If everything goes well, you could call go functions in your flutter app.
 
 Whenever you modified the go code, you have to regenerate the native module with gomobile again.
 
@@ -79,7 +79,7 @@ Next you have to create a new go package for flutter_go with these requirements:
 - The package doesn't contain code which gomobile cannot process
 
 We suggest to keep this module minimal. You could include other Go modules
-or doing some initailization in the Bootstrap function.
+or doing some initialization in the Bootstrap function.
 
 Your business logic should be exposed through the rpc package.
 
